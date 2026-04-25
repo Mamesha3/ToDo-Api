@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model User {
+  id                   Int              @id @default(autoincrement())
+  email                String           @unique
+  name                 String?
+  password             String?
+  countSmart           Int              @default(0)
+  dailyImageCount      Int              @default(0)
+  lastImageResetDate   DateTime?
+  posts                Todo[]
+  messagesSent         Message[]        @relation("SentMessages")
+  messagesReceived     Message[]       @relation("ReceivedMessages")
+  sharedTodos          TodoShare[]
+  aiConversations      AIConversation[]
+}
+
+model Todo {
+  id          Int       @id @default(autoincrement())
+  title       String
+  content     String?
+  completed   Boolean?  @default(false)
+  isSmart     Boolean?  @default(false)
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  author      User?     @relation(fields: [authorId], references: [id])
+  authorId    Int?
+  sharedWith  TodoShare[]
+}
+
+model TodoShare {
+  id        Int      @id @default(autoincrement())
+  todo      Todo     @relation(fields: [todoId], references: [id], onDelete: Cascade)
+  todoId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime @default(now())
+
+  @@unique([todoId, userId])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  senderId  Int
+  receiverId Int
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model AIConversation {
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  messages  AIMessage[]
+}
+
+model AIMessage {
+  id             Int            @id @default(autoincrement())
+  conversationId Int
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String         // 'user' or 'assistant'
+  content        String
+  createdAt      DateTime       @default(now())
+}

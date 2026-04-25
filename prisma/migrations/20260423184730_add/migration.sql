@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Todo" ADD COLUMN     "countSmart" INTEGER NOT NULL DEFAULT 0;
