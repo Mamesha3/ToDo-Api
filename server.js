@@ -5,6 +5,7 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
+import cron from 'node-cron'
 
 import todoRoutes from './routes/TodoRoutes.js'
 import userRoutes from './routes/userRoute.js'
@@ -122,6 +123,63 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id)
     })
+})
+
+// Scheduled job to check overdue todos with autoChangeStatus enabled
+// Runs every minute
+cron.schedule('* * * * *', async () => {
+    try {
+        const now = new Date()
+        
+        // Find all overdue todos with autoChangeStatus enabled and not completed
+        const overdueTodos = await prisma.todo.findMany({
+            where: {
+                completedAt: {
+                    lt: now
+                },
+                autoChangeStatus: true,
+                completed: false
+            },
+            include: {
+                author: {
+                    select: {
+                        id: true
+                    }
+                }
+            }
+        })
+        
+        if (overdueTodos.length > 0) {
+            console.log(`Found ${overdueTodos.length} overdue todos to auto-complete`)
+            
+            // Mark all overdue todos as completed
+            await prisma.todo.updateMany({
+                where: {
+                    id: {
+                        in: overdueTodos.map(t => t.id)
+                    }
+                },
+                data: {
+                    completed: true
+                }
+            })
+            
+            console.log(`Auto-completed ${overdueTodos.length} todos`)
+            
+            // Notify each user about their auto-completed todos
+            overdueTodos.forEach(todo => {
+                const socketId = onlineUsers.get(todo.author.id.toString())
+                if (socketId) {
+                    io.to(socketId).emit('todo_auto_completed', {
+                        todoId: todo.id,
+                        message: 'Todo was automatically marked as completed (overdue)'
+                    })
+                }
+            })
+        }
+    } catch (error) {
+        console.error('Error in scheduled job for auto-completing todos:', error)
+    }
 })
 
 httpServer.listen(PORT, () => {

@@ -28,16 +28,17 @@ model User {
 }
 
 model Todo {
-  id          Int       @id @default(autoincrement())
-  title       String
-  content     String?
-  completed   Boolean?  @default(false)
-  isSmart     Boolean?  @default(false)
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
-  author      User?     @relation(fields: [authorId], references: [id])
-  authorId    Int?
-  sharedWith  TodoShare[]
+  id               Int       @id @default(autoincrement())
+  title            String
+  content          String?
+  completed        Boolean?  @default(false)
+  isSmart          Boolean?  @default(false)
+  autoChangeStatus Boolean?  @default(false)
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+  author           User?     @relation(fields: [authorId], references: [id])
+  authorId         Int?
+  sharedWith       TodoShare[]
 }
 
 model TodoShare {

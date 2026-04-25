@@ -8,7 +8,7 @@ const router = express.Router()
 const hf = new InferenceClient(process.env.HF_ACCESS_TOKEN)
 
 router.post("/todo", authenticate, async (req, res) => {
-    const { title, content, completedAt, isSmart } = req.body
+    const { title, content, completedAt, isSmart, autoChangeStatus } = req.body
     const { id } = req.user
 
     if(!title || !content || !id) {
@@ -23,7 +23,8 @@ router.post("/todo", authenticate, async (req, res) => {
             content,
             authorId: Number(id),
             completedAt: completedAt ? new Date(completedAt) : null,
-            isSmart: isSmart || false
+            isSmart: isSmart || false,
+            autoChangeStatus: autoChangeStatus || false
         }
     })
 
@@ -90,7 +91,7 @@ router.get('/todo', authenticate, async (req, res) => {
 
 router.put('/todo/:id', authenticate, async (req, res) => {
     const { id } = req.params
-    const { title, content, completedAt } = req.body
+    const { title, content, completedAt, autoChangeStatus } = req.body
     if(!id || !title || !content) {
         return res.status(400).json({
             msg: 'ID, title and content are required'
@@ -104,7 +105,8 @@ router.put('/todo/:id', authenticate, async (req, res) => {
         data: {
             title,
             content,
-            completedAt: completedAt ? new Date(completedAt) : null
+            completedAt: completedAt ? new Date(completedAt) : null,
+            autoChangeStatus: autoChangeStatus !== undefined ? autoChangeStatus : undefined
         }
     })
     
