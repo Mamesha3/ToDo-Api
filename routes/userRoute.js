@@ -80,7 +80,11 @@ router.post('/login', async (req, res) => {
 
         const token = generateToken(user)
         // pass token as cookie
-        res.cookie('token', token, { httpOnly: true })
+        res.cookie('token', token, { 
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production' ? true : false,
+            sameSite: 'none'
+        })
 
         res.status(200).json({
             msg: 'User logged in',
@@ -103,7 +107,11 @@ router.post('/logout', authenticate, (req, res) => {
 // refresh token
 router.post('/refresh', authenticate, (req, res) => {
     const token = generateToken(req.user)
-    res.cookie('token', token, { httpOnly: true })
+    res.cookie('token', token, { 
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production' ? true : false,
+        sameSite: 'none'
+    })
     res.status(200).json({
         msg: 'Token refreshed',
         user: req.user
